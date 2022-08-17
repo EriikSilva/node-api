@@ -34,7 +34,7 @@ app.use('/pedidos', rotaPedidos);
 
 //quando não encontra uma rota
 app.use((req, res, next) => {
-    const erro = new Error('Não encontrado');   
+    const erro = new Error('Rota Não encontrada');   
     erro.status = 404;
     next(erro);
 });

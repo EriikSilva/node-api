@@ -14,7 +14,6 @@ router.get("/", (req, res, next) => {
         message: err,
       });
     }
-
     conn.query(
       "SELECT * FROM produtos",
       //CALLBACK
@@ -26,16 +25,28 @@ router.get("/", (req, res, next) => {
           });
         }
 
+        const response = {
+          quantidade: result.length,
+          produtos: result.map((res) => {
+            return {
+              id_produto: res.id_produto,
+              nome: res.nome,
+              preco: res.preco,
+              request: {
+                tipo: "GET",
+                descricao: "Retorna todos os produtos",
+                url: "https://localhost:3000/produtos/" + res.id_produto,
+              },
+            };
+          }),
+        };
+
         return res.status(200).send({
-          response: result,
+          response: response,
         });
       }
     );
   });
-
-  // res.status(200).send({
-  //     message: 'ROTA DE PRODUTOS'
-  // });
 });
 
 //PRODUTO POR ID
@@ -63,17 +74,29 @@ router.get("/:id_produto", (req, res) => {
           });
         }
 
-        return res.status(200).send({
-          response: result,
-        });
+        if (result.length == 0) {
+          return res.status(404).send({
+            message: "Produto não existe ou não encontrado",
+          });
+        }
+
+        const response = {
+          produto: {
+            id_produto: result[0].id_produto,
+            nome: result[0].nome,
+            preco: result[0].preco,
+            request: {
+              tipo: "GET",
+              descricao: "Retorna um produto por ID",
+              url: "https://localhost:3000/produtos/",
+            },
+          },
+        };
+
+        return res.status(200).send(response);
       }
     );
   });
-
-  // res.status(200).send({
-  //     message: 'ROTA DE PRODUTO id',
-  //     id: id
-  // });
 });
 
 //CRIA UM PRODUTO
@@ -99,10 +122,21 @@ router.post("/", (req, res, next) => {
             response: null,
           });
         }
-        res.status(201).send({
+
+        const response = {
           message: "Produto Inserido",
-          id_produto: result.insertId,
-        });
+          produto: {
+            id_produto: result.id_produto,
+            nome: req.body.nome,
+            preco: req.body.preco,
+            request: {
+              tipo: "POST",
+              descricao: "Insere um produto",
+              url: "https://localhost:3000/produtos/",
+            },
+          },
+        };
+        return res.status(201).send(response);
       }
     );
   });
@@ -110,79 +144,92 @@ router.post("/", (req, res, next) => {
 
 //ALTERA UM PRODUTO
 router.patch("/", (req, res) => {
-    
-    mysql.getConnection((err, conn) => {
-        if (err) {
-          return res.status(500).send({
-            message: err,
-          });
-        }
-    
-        conn.query(
-          `UPDATE produtos 
+  mysql.getConnection((err, conn) => {
+    if (err) {
+      return res.status(500).send({
+        message: err,
+      });
+    }
+
+    conn.query(
+      `UPDATE produtos 
                 SET nome = ?,
                     preco = ?
             WHERE id_produto = ?`,
-          [
-            req.body.nome,
-            req.body.preco,
-            req.body.id_produto
-          ],
-    
-          (err, result, field) => {
-            //LIBERA A CONEXÃO
-            conn.release();
-    
-            if (err) {
-              res.status(500).send({
-                error: err,
-                response: null,
-              });
-            }
-            res.status(202).send({
-              message: "Produto Atualizado",
-            //   id_produto: result.insertId,
-            });
-          }
-        );
-      });
+      [req.body.nome, req.body.preco, req.body.id_produto],
 
+      (err, result, field) => {
+        //LIBERA A CONEXÃO
+        conn.release();
 
+        if (err) {
+          res.status(500).send({
+            error: err,
+            response: null,
+          });
+        }
+
+        const response = {
+          message: "Produto Atualizado",
+          produtoAtualizado: {
+            id_produto: req.body.id_produto,
+            nome: req.body.nome,
+            preco: req.body.preco,
+            request: {
+              tipo: "POST",
+              descricao: "Atualiza um produto",
+              url: "https://localhost:3000/produtos/" + req.body.id_produto,
+            },
+          },
+        };
+
+        return res.status(202).send(response);
+      }
+    );
+  });
 });
 
 //DELETAR UM PRODUTO
 router.delete("/:id_produto", (req, res) => {
-    
-    mysql.getConnection((err, conn) => {
+  mysql.getConnection((err, conn) => {
+    if (err) {
+      return res.status(500).send({
+        message: err,
+      });
+    }
+
+    conn.query(
+      `DELETE FROM produtos 
+            WHERE id_produto = ?`,
+      [req.body.id_produto],
+
+      (err, result, field) => {
+        //LIBERA A CONEXÃO
+        conn.release();
+
         if (err) {
-          return res.status(500).send({
-            message: err,
+          res.status(500).send({
+            error: err,
+            response: null,
           });
         }
-    
-        conn.query(
-          `DELETE FROM produtos 
-            WHERE id_produto = ?`,
-          [req.body.id_produto],
-    
-          (err, result, field) => {
-            //LIBERA A CONEXÃO
-            conn.release();
-    
-            if (err) {
-              res.status(500).send({
-                error: err,
-                response: null,
-              });
-            }
-            res.status(202).send({
-              message: "Produto Excluido",
-            });
-          }
-        );
-      });
 
-
+        const response = {
+          message: "Produto Excluido",
+          request: {
+            tipo: "DELETE",
+            descricao: "deleta um produto",
+            url: "https://localhost:3000/produtos/",
+            body: {
+              nome: "string",
+              preco: "number",
+            },
+          },
+        };
+        return res.status(202).send(response);
+      }
+    );
+  });
 });
 
 module.exports = router;
