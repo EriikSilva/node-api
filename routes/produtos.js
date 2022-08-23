@@ -3,6 +3,8 @@ const { route } = require("../app");
 const router = express.Router();
 const mysql = require("../mysql").pool;
 
+const login = require('../middleware/login')
+
 //multer para upload de imagem
 const multer = require('multer');
 
@@ -136,9 +138,11 @@ router.get("/:id_produto", (req, res) => {
 });
 
 //CRIA UM PRODUTO
-router.post("/", upload.single('produto_imagem'), (req, res, next) => {
+router.post("/", login.obrigatorio , upload.single('produto_imagem'),  (req, res, next) => {
 
-  console.log('@@Oq veio no arquivo inserido =>>>> ', req.file)
+  console.log('@@Oq veio no arquivo inserido =>>>> ', req.file);
+
+  console.log('@@Oq veio no req.usuario =>>>> ', req.usuario)
 
   mysql.getConnection((err, conn) => {
     if (err) {
@@ -187,7 +191,7 @@ router.post("/", upload.single('produto_imagem'), (req, res, next) => {
 });
 
 //ALTERA UM PRODUTO
-router.patch("/", (req, res) => {
+router.patch("/", login.obrigatorio, (req, res) => {
   mysql.getConnection((err, conn) => {
     if (err) {
       return res.status(500).send({
@@ -234,7 +238,7 @@ router.patch("/", (req, res) => {
 });
 
 //DELETAR UM PRODUTO
-router.delete("/:id_produto", (req, res) => {
+router.delete("/:id_produto", login.obrigatorio, (req, res) => {
   mysql.getConnection((err, conn) => {
     if (err) {
       return res.status(500).send({
